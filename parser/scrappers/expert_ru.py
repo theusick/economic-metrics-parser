@@ -1,12 +1,11 @@
-import re
 import logging
-
-from typing import Union
-from bs4 import BeautifulSoup, Tag, NavigableString
-
+import re
 from parser.config import config
-from parser.utils import convert_company_name
 from parser.scrappers.base_scrapper import BaseScrapper
+from parser.utils import convert_company_name
+from typing import Union
+
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 
 log = logging.getLogger(__name__)
@@ -25,7 +24,7 @@ class ExpertScrapper(BaseScrapper):
         """
         Get companies name by year.
         """
-        log.debug(f"Start scrapping expert by upload_year={upload_year}")
+        log.debug(f'Start scrapping expert by upload_year={upload_year}')
 
         companies = []
         if (
@@ -36,11 +35,11 @@ class ExpertScrapper(BaseScrapper):
             return companies
         # Get a list of the TOP companies rated "Expert" in `METRICS_YEAR` year
         companies_table = await self.__get_companies_table(
-            url=self.base_url + "/" + str(upload_year)
+            url=self.base_url + '/' + str(upload_year),
         )
-        companies_rows = companies_table.find_all("tr")
+        companies_rows = companies_table.find_all('tr')
         for row in companies_rows[1 : len(companies_rows)]:
-            cells = row.find_all("td")
+            cells = row.find_all('td')
             if len(cells):
                 company_top_pos = self.__convert_top_number(cells[0].text)
                 company_name = convert_company_name(cells[1].text)
@@ -49,17 +48,17 @@ class ExpertScrapper(BaseScrapper):
         return companies
 
     def __convert_top_number(self, row_top_number: str) -> str:
-        result = re.search(r"\d+", row_top_number)
+        result = re.search(r'\d+', row_top_number)
         if result:
             result = result.group()
         else:
-            result = "-"
+            result = '-'
         return result
 
     async def __get_companies_table(
-        self, url: str
+        self, url: str,
     ) -> Union[Tag, NavigableString, None]:
         async with self._session.get(url) as response:
             text = await response.read()
-            main_soup = BeautifulSoup(text.decode("utf-8"), "lxml")
-            return main_soup.find("table", class_="rating-table")
+            main_soup = BeautifulSoup(text.decode('utf-8'), 'lxml')
+            return main_soup.find('table', class_='rating-table')

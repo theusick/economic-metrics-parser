@@ -1,7 +1,7 @@
-import aiohttp
-
 from types import TracebackType
 from typing import Optional, Type
+
+import aiohttp
 
 
 class BaseScrapper:
@@ -10,7 +10,7 @@ class BaseScrapper:
     def __init__(self) -> None:
         self._session = aiohttp.ClientSession()
 
-    async def __aenter__(self) -> "BaseScrapper":
+    async def __aenter__(self) -> 'BaseScrapper':
         return self
 
     async def __aexit__(
