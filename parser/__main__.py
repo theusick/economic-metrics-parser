@@ -30,6 +30,15 @@ group.add_argument(
     help='Economic metrics upload end year. In range 2013-2022',
 )
 
+group.add_argument(
+    '-f',
+    '--file',
+    type=str,
+    default=config.OUTPUT_DEFAULT_FILE,
+    dest='output_file',
+    help='Output file',
+)
+
 group = arg_parser.add_argument_group('Logging options')
 group.add_argument(
     '-ll',
@@ -73,7 +82,7 @@ async def main(arguments: Namespace):
     ):
         raise RuntimeError('end_year not in valid range')
 
-    with pd.ExcelWriter(config.OUTPUT_DEFAULT_FILE) as writer:
+    with pd.ExcelWriter(arguments.output_file) as writer:
         async for year in trange(start_year, end_year + 1, desc='Upload by year'):
             top_companies = await get_top_companies(year)
 
@@ -106,7 +115,7 @@ async def main(arguments: Namespace):
 
 
 if __name__ == '__main__':
-    arguments = arg_parser.parse_args()
-    basic_config(arguments.log_level, arguments.log_format, buffered=True)
+    args = arg_parser.parse_args()
+    basic_config(args.log_level, args.log_format, buffered=True)
 
-    asyncio.run(main(arguments))
+    asyncio.run(main(args))

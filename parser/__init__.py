@@ -1,5 +1,5 @@
 """
-Parser of economic indicators of the top 400 Russian companies.
+Parser of economic indicators of the top 400 Russian companies
 """
 __author__ = 'Kirill Kashirin'
 __maintainer__ = __author__

@@ -1,7 +1,15 @@
+"""
+Main config of the app
+"""
+
 from parser.utils import MetricType
 
 
 class Config:
+    """
+    Class for storing static const values
+    """
+
     COMPANIES_BASE_URL = 'https://expert.ru/expert400'
 
     METRICS_BASE_URL = 'https://smart-lab.ru/q/shares_fundamental4'

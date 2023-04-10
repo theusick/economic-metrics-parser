@@ -1,5 +1,5 @@
 """
-Scrappers to get economics statistics.
+Scrappers to get economics statistics
 """
 
 from .expert_ru import ExpertScrapper

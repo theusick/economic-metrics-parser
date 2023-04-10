@@ -1,4 +1,8 @@
-from parser.utils import MetricType
+"""
+Contains methods for data processing
+"""
+
+from .metric_type import MetricType
 
 
 def combine_metric_data(

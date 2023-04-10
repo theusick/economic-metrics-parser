@@ -1,8 +1,10 @@
+"""
+Expert site scrapper
+"""
 import logging
 import re
 from parser.config import config
 from parser.scrappers.base_scrapper import BaseScrapper
-from parser.utils import convert_company_name
 from typing import Union
 
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -13,7 +15,7 @@ log = logging.getLogger(__name__)
 
 class ExpertScrapper(BaseScrapper):
     """
-    Scrapper for Expert site.
+    Scrapper for Expert site
     """
 
     def __init__(self) -> None:
@@ -22,7 +24,7 @@ class ExpertScrapper(BaseScrapper):
 
     async def scrap(self, upload_year: int) -> list[tuple[int, str]]:
         """
-        Get companies name by year.
+        Get companies name by year
         """
         log.debug('Start scrapping expert by upload_year=%s', upload_year)
 
@@ -42,14 +44,13 @@ class ExpertScrapper(BaseScrapper):
             cells = row.find_all('td')
             if len(cells):
                 company_top_pos = self.__convert_top_number(cells[0].text)
-                company_name = convert_company_name(cells[1].text)
+                company_name = self.convert_company_name(cells[1].text)
 
                 companies.append((company_top_pos, company_name))
         return companies
 
     def __convert_top_number(self, row_top_number: str) -> str:
-        result = re.search(r'\d+', row_top_number)
-        if result:
+        if result := re.search('\\d+', row_top_number):
             result = result.group()
         else:
             result = '-'

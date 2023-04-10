@@ -1,7 +1,7 @@
 import logging
 from parser.config import config
 from parser.scrappers.base_scrapper import BaseScrapper
-from parser.utils import MetricType, convert_company_name
+from parser.utils import MetricType
 from typing import Union
 
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 class SmartLabScrapper(BaseScrapper):
     """
-    Scrapper for smart-lab site.
+    Scrapper for smart-lab site
     """
 
     def __init__(self) -> None:
@@ -21,7 +21,7 @@ class SmartLabScrapper(BaseScrapper):
 
     async def scrap(self, metric: MetricType, **kwargs) -> dict:
         """
-        Get companies economic table by metric type.
+        Get companies economic table by metric type
         """
         log.debug(
             'Start scrapping smart_lab_ru by metric.name=%s, metric.filter=%s',
@@ -47,7 +47,7 @@ class SmartLabScrapper(BaseScrapper):
             if len(columns) < 3:
                 continue
 
-            company_name = convert_company_name(columns[1].find('a').text)
+            company_name = self.convert_company_name(columns[1].find('a').text)
             if companies_name is not None:
                 company_name = self.__find_company_name(companies_name, company_name)
 
