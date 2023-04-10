@@ -103,6 +103,9 @@ disable=
     fixme,
     # __future__.annotaions not work in Python 3.9
     consider-alternative-union-syntax,
+    # as main module names `parser` and bbeing confused
+    # with deprecated
+    deprecated-module,
 
 
 [REPORTS]
