@@ -4,7 +4,7 @@ from parser.scrappers.base_scrapper import BaseScrapper
 from parser.utils import MetricType, convert_company_name
 from typing import Union
 
-from bs4 import BeautifulSoup, NavigableString, ResultSet, Tag
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 
 log = logging.getLogger(__name__)
@@ -23,7 +23,11 @@ class SmartLabScrapper(BaseScrapper):
         """
         Get companies economic table by metric type.
         """
-        log.debug(f'Start scrapping smart_lab_ru by metric={metric.name}')
+        log.debug(
+            'Start scrapping smart_lab_ru by metric.name=%s, metric.filter=%s',
+            metric.name,
+            metric.filter,
+        )
 
         companies_name = kwargs.get('companies', None)
 
@@ -44,7 +48,7 @@ class SmartLabScrapper(BaseScrapper):
                 continue
 
             company_name = convert_company_name(columns[1].find('a').text)
-            if len(companies_name) != 0:
+            if companies_name is not None:
                 company_name = self.__find_company_name(companies_name, company_name)
 
             years_data, table_row_offset = {}, len(columns) - len(table_years) - 1
@@ -59,7 +63,9 @@ class SmartLabScrapper(BaseScrapper):
         return companies_metrics
 
     def __find_company_name(
-        self, companies_name: list[str], substring_name: str,
+        self,
+        companies_name: list[str],
+        substring_name: str,
     ) -> str:
         for company_name in companies_name:
             if substring_name in company_name:
@@ -77,7 +83,8 @@ class SmartLabScrapper(BaseScrapper):
         return years
 
     async def __get_companies_metrics_table(
-        self, url: str,
+        self,
+        url: str,
     ) -> Union[Tag, NavigableString, None]:
         async with self._session.get(url) as response:
             text = await response.read()

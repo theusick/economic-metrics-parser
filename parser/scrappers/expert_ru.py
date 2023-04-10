@@ -24,7 +24,7 @@ class ExpertScrapper(BaseScrapper):
         """
         Get companies name by year.
         """
-        log.debug(f'Start scrapping expert by upload_year={upload_year}')
+        log.debug('Start scrapping expert by upload_year=%s', upload_year)
 
         companies = []
         if (
@@ -56,7 +56,8 @@ class ExpertScrapper(BaseScrapper):
         return result
 
     async def __get_companies_table(
-        self, url: str,
+        self,
+        url: str,
     ) -> Union[Tag, NavigableString, None]:
         async with self._session.get(url) as response:
             text = await response.read()

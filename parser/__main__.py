@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from parser.config import config
 from parser.scrappers import ExpertScrapper, SmartLabScrapper
@@ -82,7 +81,8 @@ async def main(arguments: Namespace):
 
             for metric in config.METRICS_WITH_FILTER:
                 companies_metrics = await get_companies_metrics(
-                    metric, companies_names=[name for _, name in top_companies],
+                    metric,
+                    companies_names=[name for _, name in top_companies],
                 )
 
                 metric_data = combine_metric_data(
@@ -99,7 +99,8 @@ async def main(arguments: Namespace):
                         if company in metric_data:
                             yearly_companies_data[company] |= metric_data[company]
             pd.DataFrame.from_dict(yearly_companies_data, orient='index').to_excel(
-                writer, sheet_name=str(year),
+                writer,
+                sheet_name=str(year),
             )
     print(f'Successfully parsed data in {config.OUTPUT_DEFAULT_FILE}!')
 
