@@ -28,6 +28,7 @@ devenv: clean
 	rm -rf venv
 	$(PYTHON) -m venv venv
 	venv/bin/pip install -U pip
+	venv/bin/pip install -Ue '.[dev]'
 
 formatter:
 	$(PYTHON) -m black $(PROJECT_SOURCE_DIR)
