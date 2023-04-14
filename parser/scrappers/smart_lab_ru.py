@@ -49,11 +49,11 @@ class SmartLabScrapper(BaseScrapper):
 
             company_name = self.convert_company_name(columns[1].find('a').text)
             if companies_name is not None:
-                company_name = self.__find_company_name(companies_name, company_name)
+                company_name = self._find_company_name(companies_name, company_name)
 
-            years_data, table_row_offset = {}, len(columns) - len(table_years) - 1
+            years_data, table_row_offset = {}, len(columns) - len(table_years) - 2
             # Skip the last column, since there is a percentage ratio
-            for i, col in enumerate(columns[table_row_offset : len(columns) - 1]):
+            for i, col in enumerate(columns[table_row_offset : len(columns) - 2]):
                 column_value = col.text.strip().replace(' ', '')
                 if len(column_value) == 0:
                     column_value = 0
@@ -61,16 +61,6 @@ class SmartLabScrapper(BaseScrapper):
 
             companies_metrics[company_name] = years_data
         return companies_metrics
-
-    def __find_company_name(
-        self,
-        companies_name: list[str],
-        substring_name: str,
-    ) -> str:
-        for company_name in companies_name:
-            if substring_name in company_name:
-                return company_name
-        return None
 
     def __parse_table_years(self, metrics_table) -> list[int]:
         years = []

@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from parser.config import config
 from parser.scrappers import ExpertScrapper, SmartLabScrapper
@@ -56,16 +57,87 @@ group.add_argument(
 )
 
 
-async def get_top_companies(upload_year: int) -> list[tuple[int, str]]:
+log = logging.getLogger(__name__)
+
+
+async def get_top_companies(upload_year: int, **kwargs) -> list[tuple[int, str]]:
     async with ExpertScrapper() as scrapper:
-        companies = await scrapper.scrap(upload_year)
+        companies = await scrapper.scrap(upload_year, **kwargs)
         return companies
 
 
-async def get_companies_metrics(metric: MetricType, companies_names: list[str]):
+async def get_companies_metrics(metric: MetricType, **kwargs):
     async with SmartLabScrapper() as scrapper:
-        companies_metrics = await scrapper.scrap(metric, companies=companies_names)
+        companies_metrics = await scrapper.scrap(metric, **kwargs)
         return companies_metrics
+
+
+async def write_excel_top_400(
+    file_name: str,
+    start_year: int,
+    end_year: int,
+    companies_names: list,
+    companies_metrics: dict,
+) -> None:
+    with pd.ExcelWriter(file_name) as writer:
+        async for year in trange(
+            start_year, end_year + 1, desc='Download companies by year',
+        ):
+            top_companies = await get_top_companies(year, companies=companies_names)
+
+            yearly_companies_data = {}
+
+            for metric, company_metric in companies_metrics.items():
+                metric_data = combine_metric_data(
+                    companies=top_companies,
+                    metrics=company_metric,
+                    metric_type=metric,
+                    year=year,
+                )
+
+                if len(yearly_companies_data) == 0:
+                    yearly_companies_data = metric_data
+                else:
+                    for company, _ in yearly_companies_data.items():
+                        if company in metric_data:
+                            yearly_companies_data[company] |= metric_data[company]
+            pd.DataFrame.from_dict(yearly_companies_data, orient='index').to_excel(
+                writer,
+                sheet_name=str(year),
+            )
+    print(f'Successfully saved data in {file_name}!')
+
+
+async def write_excel_metrics(
+    file_name: str, start_year: int, end_year: int, companies_metrics: dict,
+) -> None:
+    with pd.ExcelWriter(file_name) as writer:
+        async for year in trange(
+            start_year, end_year + 1, desc='Download companies by year',
+        ):
+            yearly_companies_data = {}
+
+            for metric, company_metric in companies_metrics.items():
+                metric_data = combine_metric_data(
+                    companies=[
+                        (i, company) for i, company in enumerate(company_metric.keys())
+                    ],
+                    metrics=company_metric,
+                    metric_type=metric,
+                    year=year,
+                )
+
+                if len(yearly_companies_data) == 0:
+                    yearly_companies_data = metric_data
+                else:
+                    for company, _ in yearly_companies_data.items():
+                        if company in metric_data:
+                            yearly_companies_data[company] |= metric_data[company]
+            pd.DataFrame.from_dict(yearly_companies_data, orient='index').to_excel(
+                writer,
+                sheet_name=str(year),
+            )
+    print(f'Successfully saved data in {file_name}!')
 
 
 async def main(arguments: Namespace):
@@ -82,36 +154,24 @@ async def main(arguments: Namespace):
     ):
         raise RuntimeError('end_year not in valid range')
 
-    with pd.ExcelWriter(arguments.output_file) as writer:
-        async for year in trange(start_year, end_year + 1, desc='Upload by year'):
-            top_companies = await get_top_companies(year)
+    companies_metrics, companies_names = {}, []
+    async for metric_i in trange(
+        len(config.METRICS_WITH_FILTER), desc='Download companies metrics',
+    ):
+        metric = config.METRICS_WITH_FILTER[metric_i]
 
-            yearly_companies_data = {}
+        companies_metric = await get_companies_metrics(metric)
+        if len(companies_names) == 0:
+            companies_names = companies_metric.keys()
+        companies_metrics[metric] = companies_metric
 
-            for metric in config.METRICS_WITH_FILTER:
-                companies_metrics = await get_companies_metrics(
-                    metric,
-                    companies_names=[name for _, name in top_companies],
-                )
-
-                metric_data = combine_metric_data(
-                    companies=top_companies,
-                    metrics=companies_metrics,
-                    metric_type=metric,
-                    year=year,
-                )
-
-                if len(yearly_companies_data) == 0:
-                    yearly_companies_data = metric_data
-                else:
-                    for company, _ in yearly_companies_data.items():
-                        if company in metric_data:
-                            yearly_companies_data[company] |= metric_data[company]
-            pd.DataFrame.from_dict(yearly_companies_data, orient='index').to_excel(
-                writer,
-                sheet_name=str(year),
-            )
-    print(f'Successfully parsed data in {config.OUTPUT_DEFAULT_FILE}!')
+    await write_excel_top_400(
+        file_name=arguments.output_file,
+        start_year=start_year,
+        end_year=end_year,
+        companies_names=companies_names,
+        companies_metrics=companies_metrics,
+    )
 
 
 if __name__ == '__main__':

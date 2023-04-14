@@ -22,11 +22,13 @@ class ExpertScrapper(BaseScrapper):
         super().__init__()
         self.base_url = config.COMPANIES_BASE_URL
 
-    async def scrap(self, upload_year: int) -> list[tuple[int, str]]:
+    async def scrap(self, upload_year: int, **kwargs) -> list[tuple[int, str]]:
         """
         Get companies name by year
         """
         log.debug('Start scrapping expert by upload_year=%s', upload_year)
+
+        companies_name = kwargs.get('companies', None)
 
         companies = []
         if (
@@ -39,12 +41,16 @@ class ExpertScrapper(BaseScrapper):
         companies_table = await self.__get_companies_table(
             url=self.base_url + '/' + str(upload_year),
         )
+        offset = 1 if upload_year == 2022 else 0
+
         companies_rows = companies_table.find_all('tr')
         for row in companies_rows[1 : len(companies_rows)]:
             cells = row.find_all('td')
             if len(cells):
                 company_top_pos = self.__convert_top_number(cells[0].text)
-                company_name = self.convert_company_name(cells[1].text)
+                company_name = self.convert_company_name(cells[1 + offset].text)
+                if companies_name is not None:
+                    company_name = self._find_company_name(companies_name, company_name)
 
                 companies.append((company_top_pos, company_name))
         return companies
@@ -57,8 +63,7 @@ class ExpertScrapper(BaseScrapper):
         return result
 
     async def __get_companies_table(
-        self,
-        url: str,
+        self, url: str,
     ) -> Union[Tag, NavigableString, None]:
         async with self._session.get(url) as response:
             text = await response.read()
