@@ -7,8 +7,11 @@ from parser.utils import MetricType
 
 
 class ParserMode(Enum):
+    # Download first top-400 companies, then past metrics by them
     TOP_400 = 'top-400'
+    # Download only default metrics
     DIVIDENDS = 'dividends'
+    # Download metrics for `РСБУ`
     RAS = 'ras'
 
     def __str__(self):
