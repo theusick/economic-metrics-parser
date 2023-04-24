@@ -63,9 +63,10 @@ class ExpertScrapper(BaseScrapper):
         return result
 
     async def __get_companies_table(
-        self, url: str,
+        self,
+        url: str,
     ) -> Union[Tag, NavigableString, None]:
-        async with self._session.get(url) as response:
+        async with self._session.get(url, headers=config.CLIENT_HEADERS) as response:
             text = await response.read()
             main_soup = BeautifulSoup(text.decode('utf-8'), 'lxml')
             return main_soup.find('table', class_='rating-table')
