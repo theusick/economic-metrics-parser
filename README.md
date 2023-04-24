@@ -1,5 +1,8 @@
 # Parser of economic metrics
-Parser of economic indicators of the top 400 Russian companies
+Async parser of economic indicators (dividends, shares and others):
+ * For top 400 Russian companies (Expert.ru and smart-lab.ru);
+ * IFRS (only smart-lab.ru);
+ * RSBU (only smart-lab.ru).
 
 ## Usage
 Install reqs first
@@ -15,6 +18,11 @@ python3.9 -m parser
 Runnable options
 ```
 python3.9 -m parser --help
+```
+
+Choosing mode. Default is `top-400`.
+```
+python3.9 -m parser --mode ras
 ```
 
 Upload by years period in range `[2013, 2021]`. Default is `--start-year=2013`, `--end-year=2021`.
