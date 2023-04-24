@@ -30,14 +30,15 @@ class SmartLabScrapper(BaseScrapper):
         )
 
         companies_name = kwargs.get('companies', None)
+        url_mixin = kwargs.get('url_mixin', '')
 
         companies_metrics = {}
 
-        if (metric is None) or (metric not in config.METRICS_WITH_FILTER):
+        if (metric is None) or (not isinstance(metric, MetricType)):
             return companies_metrics
 
         metrics_table = await self.__get_companies_metrics_table(
-            url=self.base_url + '/?field=' + metric.filter,
+            url=self.base_url + '/?field=' + metric.filter + url_mixin,
         )
         table_years = self.__parse_table_years(metrics_table)
 
@@ -57,7 +58,7 @@ class SmartLabScrapper(BaseScrapper):
                 column_value = col.text.strip().replace(' ', '')
                 if len(column_value) == 0:
                     column_value = 0
-                years_data[table_years[i]] = float(column_value)
+                years_data[table_years[i]] = column_value
 
             companies_metrics[company_name] = years_data
         return companies_metrics
@@ -76,7 +77,7 @@ class SmartLabScrapper(BaseScrapper):
         self,
         url: str,
     ) -> Union[Tag, NavigableString, None]:
-        async with self._session.get(url) as response:
+        async with self._session.get(url, headers=config.CLIENT_HEADERS) as response:
             text = await response.read()
             main_soup = BeautifulSoup(text.decode('utf-8'), 'lxml')
             return main_soup.find('table', class_='simple-little-table')

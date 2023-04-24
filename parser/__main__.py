@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
-from parser.config import config
+from parser.config import ParserMode, config
 from parser.scrappers import ExpertScrapper, SmartLabScrapper
 from parser.utils import MetricType, combine_metric_data
 
@@ -13,6 +13,16 @@ from tqdm.asyncio import trange
 arg_parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
 group = arg_parser.add_argument_group('Parser options')
+group.add_argument(
+    '-m',
+    '--mode',
+    type=ParserMode,
+    default=ParserMode.TOP_400,
+    choices=list(ParserMode),
+    dest='mode',
+    help='Parser modes',
+)
+
 group.add_argument(
     '-sy',
     '--start-year',
@@ -26,7 +36,7 @@ group.add_argument(
     '-ey',
     '--end-year',
     type=int,
-    default=2021,
+    default=2022,
     dest='metrics_end_year',
     help='Economic metrics upload end year. In range 2013-2022',
 )
@@ -72,6 +82,23 @@ async def get_companies_metrics(metric: MetricType, **kwargs):
         return companies_metrics
 
 
+async def get_companies_names_with_metrics(
+    metrics: list, **kwargs,
+) -> tuple[dict, list]:
+    companies_metrics, companies_names = {}, []
+    async for metric_i in trange(
+        len(metrics),
+        desc='Download companies metrics',
+    ):
+        metric = metrics[metric_i]
+
+        companies_metric = await get_companies_metrics(metric, **kwargs)
+        if len(companies_names) == 0:
+            companies_names = companies_metric.keys()
+        companies_metrics[metric] = companies_metric
+    return (companies_metrics, companies_names)
+
+
 async def write_excel_top_400(
     file_name: str,
     start_year: int,
@@ -81,7 +108,9 @@ async def write_excel_top_400(
 ) -> None:
     with pd.ExcelWriter(file_name) as writer:
         async for year in trange(
-            start_year, end_year + 1, desc='Download companies by year',
+            start_year,
+            end_year + 1,
+            desc='Download companies by year',
         ):
             top_companies = await get_top_companies(year, companies=companies_names)
 
@@ -108,12 +137,17 @@ async def write_excel_top_400(
     print(f'Successfully saved data in {file_name}!')
 
 
-async def write_excel_metrics(
-    file_name: str, start_year: int, end_year: int, companies_metrics: dict,
+async def write_excel_dividends(
+    file_name: str,
+    start_year: int,
+    end_year: int,
+    companies_metrics: dict,
 ) -> None:
     with pd.ExcelWriter(file_name) as writer:
         async for year in trange(
-            start_year, end_year + 1, desc='Download companies by year',
+            start_year,
+            end_year + 1,
+            desc='Download companies by year',
         ):
             yearly_companies_data = {}
 
@@ -154,24 +188,29 @@ async def main(arguments: Namespace):
     ):
         raise RuntimeError('end_year not in valid range')
 
-    companies_metrics, companies_names = {}, []
-    async for metric_i in trange(
-        len(config.METRICS_WITH_FILTER), desc='Download companies metrics',
-    ):
-        metric = config.METRICS_WITH_FILTER[metric_i]
+    metrics = config.DIVIDENDS_METRICS_WITH_FILTER
+    if arguments.mode == ParserMode.RAS:
+        metrics = config.RAS_METRICS_WITH_FILTER
 
-        companies_metric = await get_companies_metrics(metric)
-        if len(companies_names) == 0:
-            companies_names = companies_metric.keys()
-        companies_metrics[metric] = companies_metric
-
-    await write_excel_top_400(
-        file_name=arguments.output_file,
-        start_year=start_year,
-        end_year=end_year,
-        companies_names=companies_names,
-        companies_metrics=companies_metrics,
+    companies_metrics, companies_names = await get_companies_names_with_metrics(
+        metrics=metrics, url_mixin=config.RAS_URL_MIXIN,
     )
+
+    if arguments.mode == ParserMode.TOP_400:
+        await write_excel_top_400(
+            file_name=arguments.output_file,
+            start_year=start_year,
+            end_year=end_year,
+            companies_names=companies_names,
+            companies_metrics=companies_metrics,
+        )
+    elif (arguments.mode == ParserMode.DIVIDENDS) or (arguments.mode == ParserMode.RAS):
+        await write_excel_dividends(
+            file_name=arguments.output_file,
+            start_year=start_year,
+            end_year=end_year,
+            companies_metrics=companies_metrics,
+        )
 
 
 if __name__ == '__main__':
