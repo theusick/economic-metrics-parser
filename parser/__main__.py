@@ -46,12 +46,15 @@ async def get_companies_names_with_metrics(
 
 async def main(arguments: Namespace):
     metrics = config.DIVIDENDS_METRICS_WITH_FILTER
+    url_mixin = ''
+
     if arguments.mode == ParserMode.RAS:
         metrics = config.RAS_METRICS_WITH_FILTER
+        url_mixin = config.RAS_URL_MIXIN
 
     companies_metrics, companies_names = await get_companies_names_with_metrics(
         metrics=metrics,
-        url_mixin=config.RAS_URL_MIXIN,
+        url_mixin=url_mixin,
     )
 
     companies, functor_get_top_companies = None, None
